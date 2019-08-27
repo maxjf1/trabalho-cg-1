@@ -28,7 +28,6 @@ int width, height;
 /// Functions
 void init(void) {
     initLight(width, height); // Função extra para tratar iluminação.
-    setMaterials();
 }
 
 /* Exemplo de cálculo de vetor normal que são definidos a partir dos vértices do triângulo;
@@ -93,6 +92,10 @@ void drawObject() {
 }
 
 void drawBoard() {
+    setColorBase();
+
+    // base
+    glNormal3f(0, 0, 1);
     glBegin(GL_TRIANGLE_FAN);
     glVertex3f(-2, -2, 0);
     glVertex3f(2, -2, 0);
@@ -100,33 +103,46 @@ void drawBoard() {
     glVertex3f(-2, 2, 0);
     glEnd();
 
+    // bottom
+    glNormal3f(0, 1, 0);
     glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(-2, -2, 0);
-    glVertex3f(2, -2, 0);
-    glVertex3f(2, -2, 0.5);
     glVertex3f(-2, -2, 0.5);
-    glEnd();
-
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(2, -2, 0);
-    glVertex3f(2, 2, 0);
-    glVertex3f(2, 2, 0.5);
     glVertex3f(2, -2, 0.5);
-    glEnd();
-
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(2, 2, 0);
-    glVertex3f(-2, 2, 0);
-    glVertex3f(-2, 2, 0.5);
-    glVertex3f(2, 2, 0.5);
-    glEnd();
-
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(-2, 2, 0);
+    glVertex3f(2, -2, 0);
     glVertex3f(-2, -2, 0);
-    glVertex3f(-2, -2, 0.5);
-    glVertex3f(-2, 2, 0.5);
     glEnd();
+
+    // right
+    glNormal3f(-1, 0, 0);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(2, -2, 0.5);
+    glVertex3f(2, 2, 0.5);
+    glVertex3f(2, 2, 0);
+    glVertex3f(2, -2, 0);
+    glEnd();
+
+    // top
+    glNormal3f(0, -1, 0);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(2, 2, 0.5);
+    glVertex3f(-2, 2, 0.5);
+    glVertex3f(-2, 2, 0);
+    glVertex3f(2, 2, 0);
+    glEnd();
+
+    // left
+    glNormal3f(1, 0, 0);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(-2, 2, 0.5);
+    glVertex3f(-2, -2, 0.5);
+    glVertex3f(-2, -2, 0);
+    glVertex3f(-2, 2, 0);
+    glEnd();
+}
+
+void drawSphere(){
+
+    glutSolidSphere(1, 100, 100);
 
 }
 
@@ -149,7 +165,6 @@ void display(void) {
     glRotatef(rotationX, 1, 0, 1);
     glPushMatrix();
 //    glColor3f(0, 0, 0);
-//    glNormal3f(0.0f, 0.0f, 1.0f);
 
     drawBoard();
 
