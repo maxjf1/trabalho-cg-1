@@ -19,7 +19,7 @@ public:
 };
 
 /// Globals
-float zdist = 5.0;
+float zdist = 4.0;
 float rotationX = 0.0, rotationY = 0.0;
 int last_x, last_y;
 int width, height;
@@ -100,11 +100,25 @@ void display(void) {
 
     gluLookAt(0.0, 0.0, zdist, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
+//    glPushMatrix();
+//    glRotatef(rotationY, 0.0, 1.0, 0.0);
+//    glRotatef(rotationX, 1.0, 0.0, 0.0);
+//    drawObject();
+//    glPopMatrix();
+
     glPushMatrix();
-    glRotatef(rotationY, 0.0, 1.0, 0.0);
-    glRotatef(rotationX, 1.0, 0.0, 0.0);
-    drawObject();
+    glRotatef(rotationY, 0, 1, 1);
+    glRotatef(rotationX, 1, 0, 1);
+//    glColor3f(0, 0, 0);
+//    glNormal3f(0.0f, 0.0f, 1.0f);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(-2,-2,0);
+    glVertex3f(2,-2,0);
+    glVertex3f(2,2,0);
+    glVertex3f(-2,2,0);
+    glEnd();
     glPopMatrix();
+
 
     glutSwapBuffers();
 }
