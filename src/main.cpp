@@ -92,6 +92,44 @@ void drawObject() {
     glEnd();
 }
 
+void drawBoard() {
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(-2, -2, 0);
+    glVertex3f(2, -2, 0);
+    glVertex3f(2, 2, 0);
+    glVertex3f(-2, 2, 0);
+    glEnd();
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(-2, -2, 0);
+    glVertex3f(2, -2, 0);
+    glVertex3f(2, -2, 0.5);
+    glVertex3f(-2, -2, 0.5);
+    glEnd();
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(2, -2, 0);
+    glVertex3f(2, 2, 0);
+    glVertex3f(2, 2, 0.5);
+    glVertex3f(2, -2, 0.5);
+    glEnd();
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(2, 2, 0);
+    glVertex3f(-2, 2, 0);
+    glVertex3f(-2, 2, 0.5);
+    glVertex3f(2, 2, 0.5);
+    glEnd();
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(-2, 2, 0);
+    glVertex3f(-2, -2, 0);
+    glVertex3f(-2, -2, 0.5);
+    glVertex3f(-2, 2, 0.5);
+    glEnd();
+
+}
+
 void display(void) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -106,17 +144,16 @@ void display(void) {
 //    drawObject();
 //    glPopMatrix();
 
-    glPushMatrix();
+
     glRotatef(rotationY, 0, 1, 1);
     glRotatef(rotationX, 1, 0, 1);
+    glPushMatrix();
 //    glColor3f(0, 0, 0);
 //    glNormal3f(0.0f, 0.0f, 1.0f);
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(-2,-2,0);
-    glVertex3f(2,-2,0);
-    glVertex3f(2,2,0);
-    glVertex3f(-2,2,0);
-    glEnd();
+
+    drawBoard();
+
+
     glPopMatrix();
 
 
