@@ -16,34 +16,34 @@ void initLight(int width, int height)
    glLightfv(GL_LIGHT0, GL_SPECULAR, cor_luz);
    glLightfv(GL_LIGHT0, GL_POSITION, posicao_luz);
 
-    // Quando a opção "two_side lighting" está ativada, o opengl inverte a orientação das normais
+    // Quando a opï¿½ï¿½o "two_side lighting" estï¿½ ativada, o opengl inverte a orientaï¿½ï¿½o das normais
     // permitindo que tanto as faces externas quanto internas sejam iluminadas.
-    // Essa opção é mais lenta se comparada a renderização de apenas um dos lados
+    // Essa opï¿½ï¿½o ï¿½ mais lenta se comparada a renderizaï¿½ï¿½o de apenas um dos lados
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 }
 
 
 void setMaterials(void)
 {
-    // Parametros comuns para os dois lados da superfície
+    // Parametros comuns para os dois lados da superfï¿½cie
     GLfloat objeto_especular[] = { 0.626, 0.626, 0.626, 1.0 };
     GLfloat objeto_brilho[]    = { 90.0f };
 
-    // Material da superfície externa
+    // Material da superfï¿½cie externa
     GLfloat objeto_ambient[]   = { 0.1745, 0.01175, 0.011, 1.0 };
     GLfloat objeto_difusa[]    = { 0.6142, 0.04136, 0.041, 1.0 };
 
-    glMaterialfv(GL_FRONT, GL_AMBIENT, objeto_ambient);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, objeto_difusa);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, objeto_especular);
-    glMaterialfv(GL_FRONT, GL_SHININESS, objeto_brilho);
+    glMaterialfv(GL_BACK, GL_AMBIENT, objeto_ambient);
+    glMaterialfv(GL_BACK, GL_DIFFUSE, objeto_difusa);
+    glMaterialfv(GL_BACK, GL_SPECULAR, objeto_especular);
+    glMaterialfv(GL_BACK, GL_SHININESS, objeto_brilho);
 
     // Material das faces internas (amarelo)
     GLfloat objeto_ambient_back[]   = { 0.1745, 0.174, 0.011, 1.0 };
     GLfloat objeto_difusa_back[]    = { 0.6144, 0.614, 0.041, 1.0 };
 
-    glMaterialfv(GL_BACK, GL_AMBIENT, objeto_ambient_back);
-    glMaterialfv(GL_BACK, GL_DIFFUSE, objeto_difusa_back);
-    glMaterialfv(GL_BACK, GL_SPECULAR, objeto_especular);
-    glMaterialfv(GL_BACK, GL_SHININESS, objeto_brilho);
+    glMaterialfv(GL_FRONT, GL_AMBIENT, objeto_ambient_back);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, objeto_difusa_back);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, objeto_especular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, objeto_brilho);
 }

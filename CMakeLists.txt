@@ -8,7 +8,4 @@ find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 include_directories( ${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} )
 
-
-# TARGETS BEGIN
 target_link_libraries(trabalho-cg  ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} )
-# TARGETS END

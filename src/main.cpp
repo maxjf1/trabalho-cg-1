@@ -11,7 +11,8 @@
 class vertice {
 public:
     float x, y, z;
-}
+};
+
 class triangle {
 public:
     vertice v[3];
