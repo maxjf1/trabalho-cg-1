@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/maxjf1/projetos/cg/trabalho-cg-1/src/lib/extras.h
+
+/home/maxjf1/projetos/cg/trabalho-cg-1/src/main.cpp
+GL/glut.h
+-
+stdlib.h
+-
+stdio.h
+-
+ctype.h
+-
+math.h
+-
+lib/extras.h
+/home/maxjf1/projetos/cg/trabalho-cg-1/src/lib/extras.h
+
