@@ -1,3 +1,0 @@
-/home/maxjf1/projetos/cg/trabalho-cg-1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/maxjf1/projetos/cg/trabalho-cg-1/cmake-build-debug/CMakeFiles/trabalho-cg.dir
-/home/maxjf1/projetos/cg/trabalho-cg-1/cmake-build-debug/CMakeFiles/edit_cache.dir
