@@ -24,6 +24,12 @@ float rotationX = 0.0, rotationY = 0.0;
 int last_x, last_y;
 int width, height;
 
+const float BALL_RADIUS = 0.25;
+
+float velocity = 0.5;
+float direction = 0.0;
+bool animate = false;
+
 
 /// Functions
 void init(void) {
@@ -92,6 +98,9 @@ void drawObject() {
 }
 
 void drawBoard() {
+    glPushMatrix();
+
+
     setColorBase();
 
     // base
@@ -138,11 +147,34 @@ void drawBoard() {
     glVertex3f(-2, -2, 0);
     glVertex3f(-2, 2, 0);
     glEnd();
+    glPopMatrix();
 }
 
-void drawSphere(){
+void drawSphere() {
 
-    glutSolidSphere(1, 100, 100);
+    glPushMatrix();
+    glNormal3f(0, 0, 1);
+    setColor(0, 1, 0);
+    glTranslatef(0, -2 + BALL_RADIUS, BALL_RADIUS);
+    glutSolidSphere(BALL_RADIUS, 100, 100);
+    glPopMatrix();
+
+}
+
+void drawArrow(){
+
+    glPushMatrix();
+
+
+    glPushMatrix();
+    setColor(0, 0, 1);
+    glTranslatef(0, -2 , BALL_RADIUS);
+    glRotatef(direction, 0, 0, 1);
+    glTranslatef(0, BALL_RADIUS *2.2, 0);
+    glRotatef(90, -1, 0, 0);
+    glutSolidCone(BALL_RADIUS/2, velocity + 0.01, 100, 100);
+    glPopMatrix();
+    glPopMatrix();
 
 }
 
@@ -164,13 +196,12 @@ void display(void) {
     glRotatef(rotationY, 0, 1, 1);
     glRotatef(rotationX, 1, 0, 1);
     glPushMatrix();
-//    glColor3f(0, 0, 0);
 
+    drawArrow();
+    drawSphere();
     drawBoard();
 
-
     glPopMatrix();
-
 
     glutSwapBuffers();
 }
@@ -189,13 +220,40 @@ void reshape(int w, int h) {
     gluPerspective(60.0, (GLfloat) w / (GLfloat) h, 0.01, 200.0);
 }
 
+float fixRange(float value, float min, float max) {
+    if (value > max)
+        return max;
+    else if (value < min)
+        return min;
+    return value;
+}
+
 void keyboard(unsigned char key, int x, int y) {
 
     switch (tolower(key)) {
+        case 'w':
+            velocity += 0.05;
+            break;
+        case 's':
+
+            velocity -= 0.05;
+            break;
+        case 'a':
+            direction += 1;
+            break;
+        case 'd':
+            direction -= 1;
+            break;
+        case ' ':
+            animate != animate;
+            break;
         case 27:
             exit(0);
             break;
     }
+
+    velocity = fixRange(velocity, 0, 1);
+    direction = fixRange(direction, -90, 90);
 }
 
 // Motion callback
