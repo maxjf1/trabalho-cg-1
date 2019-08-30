@@ -36,7 +36,7 @@ const float BHF = 2; // Board Half Width
 float velocity = 0.5;
 float initialDirection = 0;
 float direction[2] = {0.5, 0.5};
-float position[2] = {0, -2 + BALL_RADIUS};
+float position[2] = {0, -BHF + BALL_RADIUS};
 float prismas[][3] = {
         {0.5,   -0.5, -10},
         {-0.25, 0.5,  -20},
@@ -204,9 +204,9 @@ void drawArrow() {
 
     glPushMatrix();
     setColor(0, 0, 1);
-    glTranslatef(0, -BHF, BALL_RADIUS);
+    glTranslatef(position[0], position[1], BALL_RADIUS);
     glRotatef(initialDirection, 0, 0, 1);
-    glTranslatef(0, BALL_RADIUS * 2.2, 0);
+    glTranslatef(0, BALL_RADIUS * 1.2, 0);
     glRotatef(90, -1, 0, 0);
     glutSolidCone(BALL_RADIUS / 2, height, 100, 100);
     glPopMatrix();
@@ -337,20 +337,28 @@ float fixRange(float value, float min, float max, bool circular) {
 
 void keyboard(unsigned char key, int x, int y) {
 
-    switch (tolower(key)) {
-        case 'w':
-            velocity += 0.05;
-            break;
-        case 's':
+    if (!animate) {
+        switch (tolower(key)) {
+            case 'w':
+                velocity += 0.05;
+                break;
+            case 's':
+                velocity -= 0.05;
+                break;
+            case 'a':
+                initialDirection += 2;
+                break;
+            case 'd':
+                initialDirection -= 2;
+                break;
+        }
+        velocity = fixRange(velocity, 0, 1);
+        initialDirection = fixRange(initialDirection, -180, 180, true);
+        direction[0] = cos((initialDirection + 90) * M_PI / 180);
+        direction[1] = sin((initialDirection + 90) * M_PI / 180);
+    }
 
-            velocity -= 0.05;
-            break;
-        case 'a':
-            initialDirection += 1;
-            break;
-        case 'd':
-            initialDirection -= 1;
-            break;
+    switch (tolower(key)) {
         case ' ':
             animate = !animate;
             break;
@@ -358,11 +366,6 @@ void keyboard(unsigned char key, int x, int y) {
             exit(0);
             break;
     }
-
-    velocity = fixRange(velocity, 0, 1);
-    initialDirection = fixRange(initialDirection, -180, 180, true);
-    direction[0] = cos((initialDirection + 90) * M_PI / 180);
-    direction[1] = sin((initialDirection + 90) * M_PI / 180);
 }
 
 // Motion callback
