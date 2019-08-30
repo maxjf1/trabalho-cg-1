@@ -10,9 +10,7 @@
 //  Você poderá utilizá-las adicionando novos métodos (de acesso por exemplo) ou usar suas próprias estruturas.
 class vertex {
 public:
-    float x = 0,
-            y = 0,
-            z = 0;
+    float x = 0, y = 0, z = 0;
 };
 
 class triangle {
@@ -20,16 +18,31 @@ public:
     vertex v[3];
 };
 
+
+// Definitions
+float fixRange(float value, float min, float max, bool circular = false);
+
+
 /// Globals
 float zdist = 4.0;
-float rotationX = 0.0, rotationY = 0.0;
+float rotationX = 0, rotationY = 0;
 int last_x, last_y;
 int width, height;
 
 const float BALL_RADIUS = 0.25;
+const float FPS = 60;
+const float BHF = 2; // Board Half Width
 
 float velocity = 0.5;
-float direction = 0.0;
+float initialDirection = 0;
+float direction[2] = {0.5, 0.5};
+float position[2] = {0, -2 + BALL_RADIUS};
+float prismas[][3] = {
+        {0.5,   -0.5, -10},
+        {-0.25, 0.5,  -20},
+        {1.25,  1.25, -20},
+        {-1.25, -1,   -45},
+};
 bool animate = false;
 
 
@@ -127,46 +140,46 @@ void drawBoard() {
     // base
     glNormal3f(0, 0, 1);
     glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(-2, -2, 0);
-    glVertex3f(2, -2, 0);
-    glVertex3f(2, 2, 0);
-    glVertex3f(-2, 2, 0);
+    glVertex3f(-BHF, -BHF, 0);
+    glVertex3f(BHF, -BHF, 0);
+    glVertex3f(BHF, BHF, 0);
+    glVertex3f(-BHF, BHF, 0);
     glEnd();
 
     // bottom
     glNormal3f(0, 1, 0);
     glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(-2, -2, 0.5);
-    glVertex3f(2, -2, 0.5);
-    glVertex3f(2, -2, 0);
-    glVertex3f(-2, -2, 0);
+    glVertex3f(-BHF, -BHF, 0.5);
+    glVertex3f(BHF, -BHF, 0.5);
+    glVertex3f(BHF, -BHF, 0);
+    glVertex3f(-BHF, -BHF, 0);
     glEnd();
 
     // right
     glNormal3f(-1, 0, 0);
     glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(2, -2, 0.5);
-    glVertex3f(2, 2, 0.5);
-    glVertex3f(2, 2, 0);
-    glVertex3f(2, -2, 0);
+    glVertex3f(BHF, -BHF, 0.5);
+    glVertex3f(BHF, BHF, 0.5);
+    glVertex3f(BHF, BHF, 0);
+    glVertex3f(BHF, -BHF, 0);
     glEnd();
 
     // top
     glNormal3f(0, -1, 0);
     glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(2, 2, 0.5);
-    glVertex3f(-2, 2, 0.5);
-    glVertex3f(-2, 2, 0);
-    glVertex3f(2, 2, 0);
+    glVertex3f(BHF, BHF, 0.5);
+    glVertex3f(-BHF, BHF, 0.5);
+    glVertex3f(-BHF, BHF, 0);
+    glVertex3f(BHF, BHF, 0);
     glEnd();
 
     // left
     glNormal3f(1, 0, 0);
     glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(-2, 2, 0.5);
-    glVertex3f(-2, -2, 0.5);
-    glVertex3f(-2, -2, 0);
-    glVertex3f(-2, 2, 0);
+    glVertex3f(-BHF, BHF, 0.5);
+    glVertex3f(-BHF, -BHF, 0.5);
+    glVertex3f(-BHF, -BHF, 0);
+    glVertex3f(-BHF, BHF, 0);
     glEnd();
     glPopMatrix();
 }
@@ -176,7 +189,7 @@ void drawSphere() {
     glPushMatrix();
     glNormal3f(0, 0, 1);
     setColor(0, 1, 0);
-    glTranslatef(0, -2 + BALL_RADIUS, BALL_RADIUS);
+    glTranslatef(position[0], position[1], BALL_RADIUS);
     glutSolidSphere(BALL_RADIUS, 100, 100);
     glPopMatrix();
 
@@ -184,16 +197,18 @@ void drawSphere() {
 
 void drawArrow() {
 
+    const float height = velocity + 0.01;
+
     glPushMatrix();
 
 
     glPushMatrix();
     setColor(0, 0, 1);
-    glTranslatef(0, -2, BALL_RADIUS);
-    glRotatef(direction, 0, 0, 1);
+    glTranslatef(0, -BHF, BALL_RADIUS);
+    glRotatef(initialDirection, 0, 0, 1);
     glTranslatef(0, BALL_RADIUS * 2.2, 0);
     glRotatef(90, -1, 0, 0);
-    glutSolidCone(BALL_RADIUS / 2, velocity + 0.01, 100, 100);
+    glutSolidCone(BALL_RADIUS / 2, height, 100, 100);
     glPopMatrix();
     glPopMatrix();
 
@@ -205,8 +220,7 @@ void drawPrism(float x = 0, float y = 0, float rotation = 0) {
                           {-0.25, 0},
                           {0.25, 0},
                           {0, 0.5},
-                  }
-    };
+                  }};
 
     glPushMatrix();
 
@@ -216,9 +230,8 @@ void drawPrism(float x = 0, float y = 0, float rotation = 0) {
     setColor(1, 0, 0);
     glNormal3f(0, 0, 1);
     glBegin(GL_TRIANGLES);
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
         glVertex3f(t.v[i].x, t.v[i].y, 0.5);
-    }
     glEnd();
 
     for (int j = 0; j < 3; ++j) {
@@ -249,24 +262,17 @@ void display(void) {
 
     gluLookAt(0.0, 0.0, zdist, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
-//    glPushMatrix();
-//    glRotatef(rotationY, 0.0, 1.0, 0.0);
-//    glRotatef(rotationX, 1.0, 0.0, 0.0);
-//    drawObject();
-//    glPopMatrix();
-
-
     glRotatef(rotationY, 0, 1, 1);
     glRotatef(rotationX, 1, 0, 1);
     glPushMatrix();
 
-    drawArrow();
+    if (!animate)
+        drawArrow();
     drawSphere();
 
-    drawPrism(0.5, -0.5, -10);
-    drawPrism(-0.25, 0.5, -20);
-    drawPrism(1.25, 1.25, -20);
-    drawPrism(-1.25, -1, -45);
+    for (int i = 0; i < 4; ++i)
+        drawPrism(prismas[i][0], prismas[i][1], prismas[i][2]);
+
     drawBoard();
 
     glPopMatrix();
@@ -274,7 +280,40 @@ void display(void) {
     glutSwapBuffers();
 }
 
+void updateState() {
+    if (!animate) return;
+    // maximum board position
+    const float maxRange[] = {-BHF + BALL_RADIUS, BHF - BALL_RADIUS};
+
+    // TODO: handle prisma colision
+    for (int j = 0; j < 4; ++j) {
+
+    }
+
+    // overflow
+    position[0] = fixRange(position[0] + velocity * 0.1 * direction[0], maxRange[0], maxRange[1]);
+    position[1] = fixRange(position[1] + velocity * 0.1 * direction[1], maxRange[0], maxRange[1]);
+
+    // borders colision
+    for (int i = 0; i < 2; ++i) {
+        if (position[i] == maxRange[0] || position[i] == maxRange[1])
+            direction[i] *= -1;
+    }
+}
+
 void idle() {
+    float t, frameTime;
+    static float tLast = 0.0;
+    // Get elapsed time
+    t = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+    // Calculate frame time
+    frameTime = t - tLast;
+
+    // Check if the desired frame time was achieved. If not, skip animation.
+    if (frameTime <= 1.0 / FPS)
+        return;
+
+    updateState();
     glutPostRedisplay();
 }
 
@@ -288,11 +327,11 @@ void reshape(int w, int h) {
     gluPerspective(60.0, (GLfloat) w / (GLfloat) h, 0.01, 200.0);
 }
 
-float fixRange(float value, float min, float max) {
+float fixRange(float value, float min, float max, bool circular) {
     if (value > max)
-        return max;
+        return circular ? min : max;
     else if (value < min)
-        return min;
+        return circular ? max : min;
     return value;
 }
 
@@ -307,13 +346,13 @@ void keyboard(unsigned char key, int x, int y) {
             velocity -= 0.05;
             break;
         case 'a':
-            direction += 1;
+            initialDirection += 1;
             break;
         case 'd':
-            direction -= 1;
+            initialDirection -= 1;
             break;
         case ' ':
-            animate != animate;
+            animate = !animate;
             break;
         case 27:
             exit(0);
@@ -321,7 +360,9 @@ void keyboard(unsigned char key, int x, int y) {
     }
 
     velocity = fixRange(velocity, 0, 1);
-    direction = fixRange(direction, -90, 90);
+    initialDirection = fixRange(initialDirection, -180, 180, true);
+    direction[0] = cos((initialDirection + 90) * M_PI / 180);
+    direction[1] = sin((initialDirection + 90) * M_PI / 180);
 }
 
 // Motion callback
