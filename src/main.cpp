@@ -8,14 +8,16 @@
 
 /// Estruturas iniciais para armazenar vertices
 //  Você poderá utilizá-las adicionando novos métodos (de acesso por exemplo) ou usar suas próprias estruturas.
-class vertice {
+class vertex {
 public:
-    float x, y, z;
+    float x = 0,
+            y = 0,
+            z = 0;
 };
 
 class triangle {
 public:
-    vertice v[3];
+    vertex v[3];
 };
 
 /// Globals
@@ -46,11 +48,18 @@ void init(void) {
   +----> v_1
   v_0
 */
-void CalculaNormal(triangle t, vertice *vn) {
-    vertice v_0 = t.v[0],
+
+/**
+ * Calculate normal
+ * @param t
+ * @return
+ */
+vertex calcNormal(triangle t) {
+    vertex vn;
+    vertex v_0 = t.v[0],
             v_1 = t.v[1],
             v_2 = t.v[2];
-    vertice v1, v2;
+    vertex v1, v2;
     double len;
 
     /* Encontra vetor v1 */
@@ -64,24 +73,36 @@ void CalculaNormal(triangle t, vertice *vn) {
     v2.z = v_2.z - v_0.z;
 
     /* Calculo do produto vetorial de v1 e v2 */
-    vn->x = (v1.y * v2.z) - (v1.z * v2.y);
-    vn->y = (v1.z * v2.x) - (v1.x * v2.z);
-    vn->z = (v1.x * v2.y) - (v1.y * v2.x);
+    vn.x = (v1.y * v2.z) - (v1.z * v2.y);
+    vn.y = (v1.z * v2.x) - (v1.x * v2.z);
+    vn.z = (v1.x * v2.y) - (v1.y * v2.x);
 
     /* normalizacao de n */
-    len = sqrt(pow(vn->x, 2) + pow(vn->y, 2) + pow(vn->z, 2));
+    len = sqrt(pow(vn.x, 2) + pow(vn.y, 2) + pow(vn.z, 2));
 
-    vn->x /= len;
-    vn->y /= len;
-    vn->z /= len;
+    vn.x /= len;
+    vn.y /= len;
+    vn.z /= len;
+
+    return vn;
+}
+
+/**
+ * Calculate and set normal
+ * @param t
+ */
+void setCalcNormal(triangle t) {
+    vertex normal = calcNormal(t);
+    glNormal3f(normal.x, normal.y, normal.z);
+
 }
 
 void drawObject() {
-    vertice vetorNormal;
-    vertice v[4] = {{-1.0f, -1.0f, 0.0f},
-                    {1.0f,  -1.0f, 0.0f},
-                    {-1.0f, 1.0f,  0.0f},
-                    {1.0f,  1.0f,  -0.5f}};
+    vertex vetorNormal;
+    vertex v[4] = {{-1.0f, -1.0f, 0.0f},
+                   {1.0f,  -1.0f, 0.0f},
+                   {-1.0f, 1.0f,  0.0f},
+                   {1.0f,  1.0f,  -0.5f}};
 
     triangle t[2] = {{v[0], v[1], v[2]},
                      {v[1], v[3], v[2]}};
@@ -89,7 +110,7 @@ void drawObject() {
     glBegin(GL_TRIANGLES);
     for (int i = 0; i < 2; i++) // triangulos
     {
-        CalculaNormal(t[i], &vetorNormal); // Passa face triangular e endereço do vetor normal de saída
+        vetorNormal = calcNormal(t[i]); // Passa face triangular e endereço do vetor normal de saída
         glNormal3f(vetorNormal.x, vetorNormal.y, vetorNormal.z);
         for (int j = 0; j < 3; j++) // vertices do triangulo
             glVertex3d(t[i].v[j].x, t[i].v[j].y, t[i].v[j].z);
@@ -161,19 +182,61 @@ void drawSphere() {
 
 }
 
-void drawArrow(){
+void drawArrow() {
 
     glPushMatrix();
 
 
     glPushMatrix();
     setColor(0, 0, 1);
-    glTranslatef(0, -2 , BALL_RADIUS);
+    glTranslatef(0, -2, BALL_RADIUS);
     glRotatef(direction, 0, 0, 1);
-    glTranslatef(0, BALL_RADIUS *2.2, 0);
+    glTranslatef(0, BALL_RADIUS * 2.2, 0);
     glRotatef(90, -1, 0, 0);
-    glutSolidCone(BALL_RADIUS/2, velocity + 0.01, 100, 100);
+    glutSolidCone(BALL_RADIUS / 2, velocity + 0.01, 100, 100);
     glPopMatrix();
+    glPopMatrix();
+
+}
+
+void drawPrism(float x = 0, float y = 0, float rotation = 0) {
+
+    triangle t = {{
+                          {-0.25, 0},
+                          {0.25, 0},
+                          {0, 0.5},
+                  }
+    };
+
+    glPushMatrix();
+
+    glTranslatef(x, y, 0);
+    glRotatef(rotation, 0, 0, -1);
+
+    setColor(1, 0, 0);
+    glNormal3f(0, 0, 1);
+    glBegin(GL_TRIANGLES);
+    for (int i = 0; i < 3; ++i) {
+        glVertex3f(t.v[i].x, t.v[i].y, 0.5);
+    }
+    glEnd();
+
+    for (int j = 0; j < 3; ++j) {
+        int next = (j + 1) % 3;
+        setCalcNormal({{
+                               {t.v[j].x, t.v[j].y, 0.5},
+                               {t.v[j].x, t.v[j].y, 0},
+                               {t.v[next].x, t.v[next].y, 0},
+                       }
+                      });
+        glBegin(GL_TRIANGLE_FAN);
+        glVertex3f(t.v[j].x, t.v[j].y, 0.5);
+        glVertex3f(t.v[j].x, t.v[j].y, 0);
+        glVertex3f(t.v[next].x, t.v[next].y, 0);
+        glVertex3f(t.v[next].x, t.v[next].y, 0.5);
+        glEnd();
+    }
+
     glPopMatrix();
 
 }
@@ -199,6 +262,11 @@ void display(void) {
 
     drawArrow();
     drawSphere();
+
+    drawPrism(0.5, -0.5, -10);
+    drawPrism(-0.25, 0.5, -20);
+    drawPrism(1.25, 1.25, -20);
+    drawPrism(-1.25, -1, -45);
     drawBoard();
 
     glPopMatrix();
