@@ -5,18 +5,10 @@
 #include <math.h>
 
 #include "lib/extras.h"
+#include "etc.cpp" //TODO: reorganize modules
 
 /// Estruturas iniciais para armazenar vertices
 //  Você poderá utilizá-las adicionando novos métodos (de acesso por exemplo) ou usar suas próprias estruturas.
-class vertex {
-public:
-    float x = 0, y = 0, z = 0;
-};
-
-class triangle {
-public:
-    vertex v[3];
-};
 
 
 // Definitions
@@ -32,17 +24,18 @@ int width, height;
 const float BALL_RADIUS = 0.25;
 const float FPS = 60;
 const float BHF = 2; // Board Half Width
-
-float velocity = 0.5;
-float initialDirection = 0;
-float direction[2] = {0.5, 0.5};
-float position[2] = {0, -BHF + BALL_RADIUS};
-float prismas[][3] = {
+const float STATIC_PRISMAS[][3] = {
         {0.5,   -0.5, -10},
         {-0.25, 0.5,  -20},
         {1.25,  1.25, -20},
         {-1.25, -1,   -45},
 };
+
+float velocity = 0.5;
+float initialDirection = 0;
+float direction[2] = {0.5, 0.5};
+float position[2] = {0, -BHF + BALL_RADIUS};
+triangle prismas[4];
 bool animate = false;
 
 
@@ -62,11 +55,7 @@ void init(void) {
   v_0
 */
 
-/**
- * Calculate normal
- * @param t
- * @return
- */
+// Calculate normal
 vertex calcNormal(triangle t) {
     vertex vn;
     vertex v_0 = t.v[0],
@@ -100,35 +89,23 @@ vertex calcNormal(triangle t) {
     return vn;
 }
 
-/**
- * Calculate and set normal
- * @param t
- */
+// calculate and set GLUT normal
 void setCalcNormal(triangle t) {
     vertex normal = calcNormal(t);
     glNormal3f(normal.x, normal.y, normal.z);
 
 }
 
-void drawObject() {
-    vertex vetorNormal;
-    vertex v[4] = {{-1.0f, -1.0f, 0.0f},
-                   {1.0f,  -1.0f, 0.0f},
-                   {-1.0f, 1.0f,  0.0f},
-                   {1.0f,  1.0f,  -0.5f}};
-
-    triangle t[2] = {{v[0], v[1], v[2]},
-                     {v[1], v[3], v[2]}};
-
-    glBegin(GL_TRIANGLES);
-    for (int i = 0; i < 2; i++) // triangulos
-    {
-        vetorNormal = calcNormal(t[i]); // Passa face triangular e endereço do vetor normal de saída
-        glNormal3f(vetorNormal.x, vetorNormal.y, vetorNormal.z);
-        for (int j = 0; j < 3; j++) // vertices do triangulo
-            glVertex3d(t[i].v[j].x, t[i].v[j].y, t[i].v[j].z);
-    }
-    glEnd();
+/**
+ * Fix an value range
+ * @param circular if true, when the values overflow the min value, it's reset to the max value and vice-versa
+ */
+float fixRange(float value, float min, float max, bool circular) {
+    if (value > max)
+        return circular ? min : max;
+    else if (value < min)
+        return circular ? max : min;
+    return value;
 }
 
 void drawBoard() {
@@ -214,37 +191,54 @@ void drawArrow() {
 
 }
 
-void drawPrism(float x = 0, float y = 0, float rotation = 0) {
-
+triangle makeTriangle(float x = 0, float y = 0, float rotation = 0) {
+    int i;
     triangle t = {{
                           {-0.25, 0},
                           {0.25, 0},
                           {0, 0.5},
                   }};
 
-    glPushMatrix();
+    // rotate the triangle
+    float r = -rotation * M_PI / 180;
+    for (i = 0; i < 3; ++i) {
+        float x = t.v[i].x * cos(r) - t.v[i].y * sin(r);
+        t.v[i].y = t.v[i].x * sin(r) + t.v[i].y * cos(r);
+        t.v[i].x = x;
+    }
 
-    glTranslatef(x, y, 0);
-    glRotatef(rotation, 0, 0, -1);
+    // translate
+    for (i = 0; i < 3; ++i) {
+        t.v[i].x += x;
+        t.v[i].y += y;
+    };
+
+    return t;
+}
+
+void drawPrism(triangle t) {
+    int i;
+
+    glPushMatrix();
 
     setColor(1, 0, 0);
     glNormal3f(0, 0, 1);
     glBegin(GL_TRIANGLES);
-    for (int i = 0; i < 3; ++i)
+    for (i = 0; i < 3; ++i)
         glVertex3f(t.v[i].x, t.v[i].y, 0.5);
     glEnd();
 
-    for (int j = 0; j < 3; ++j) {
-        int next = (j + 1) % 3;
+    for (i = 0; i < 3; ++i) {
+        int next = (i + 1) % 3;
         setCalcNormal({{
-                               {t.v[j].x, t.v[j].y, 0.5},
-                               {t.v[j].x, t.v[j].y, 0},
+                               {t.v[i].x, t.v[i].y, 0.5},
+                               {t.v[i].x, t.v[i].y, 0},
                                {t.v[next].x, t.v[next].y, 0},
                        }
                       });
         glBegin(GL_TRIANGLE_FAN);
-        glVertex3f(t.v[j].x, t.v[j].y, 0.5);
-        glVertex3f(t.v[j].x, t.v[j].y, 0);
+        glVertex3f(t.v[i].x, t.v[i].y, 0.5);
+        glVertex3f(t.v[i].x, t.v[i].y, 0);
         glVertex3f(t.v[next].x, t.v[next].y, 0);
         glVertex3f(t.v[next].x, t.v[next].y, 0.5);
         glEnd();
@@ -271,7 +265,7 @@ void display(void) {
     drawSphere();
 
     for (int i = 0; i < 4; ++i)
-        drawPrism(prismas[i][0], prismas[i][1], prismas[i][2]);
+        drawPrism(prismas[i]);
 
     drawBoard();
 
@@ -280,6 +274,7 @@ void display(void) {
     glutSwapBuffers();
 }
 
+// update all states
 void updateState() {
     if (!animate) return;
     // maximum board position
@@ -325,14 +320,6 @@ void reshape(int w, int h) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(60.0, (GLfloat) w / (GLfloat) h, 0.01, 200.0);
-}
-
-float fixRange(float value, float min, float max, bool circular) {
-    if (value > max)
-        return circular ? min : max;
-    else if (value < min)
-        return circular ? max : min;
-    return value;
 }
 
 void keyboard(unsigned char key, int x, int y) {
@@ -395,6 +382,11 @@ void mouse(int button, int state, int x, int y) {
 
 /// Main
 int main(int argc, char **argv) {
+    // initialize prismas
+    for (int i = 0; i < 4; ++i) {
+        prismas[i] = makeTriangle(STATIC_PRISMAS[i][0], STATIC_PRISMAS[i][1], STATIC_PRISMAS[i][2]);
+    }
+
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(1000, 600);
