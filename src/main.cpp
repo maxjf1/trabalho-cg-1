@@ -29,10 +29,13 @@ const float TRIANGLE_RADIUS = 0.3;
 const float FPS = 60;
 const float BHF = 2; // Board Half Width
 const float STATIC_PRISMAS[][3] = {
-        {0.5,   -0.5, -10},
-        {-0.25, 0.5,  -20},
-        {1.25,  1.25, -20},
-        {-1.25, -1,   -45},
+        {0.5, -0.5, -10},
+        {0.5, -0.5, -10},
+        {0.5, -0.5, -10},
+        {0.5, -0.5, -10},
+//        {-0.25, 0.5,  -20},
+//        {1.25,  1.25, -20},
+//        {-1.25, -1,   -45},
 };
 
 float velocity = 0.5;
@@ -299,8 +302,10 @@ void updateState() {
     // TODO: handle prisma colision
     for (int j = 0; j < 4; ++j) {
         // se a distancia e maior do que o raio da bola + raio do triangulo
-        if (abs(STATIC_PRISMAS[j][0] - position[0]) > BALL_RADIUS + 0.5) continue;
-        cout << "Colisão em " << j << ": " << STATIC_PRISMAS[j][0] - position[0] << endl;
+        float distance = sqrt(pow(STATIC_PRISMAS[j][0] - position[0], 2) + pow(STATIC_PRISMAS[j][0] - position[0], 2));
+        if (distance > (BALL_RADIUS + TRIANGLE_RADIUS)) continue;
+
+
     }
 
     // overflow
