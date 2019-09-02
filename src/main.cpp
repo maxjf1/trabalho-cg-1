@@ -8,6 +8,7 @@
 #include "etc.cpp" //TODO: reorganize modules
 #include <iostream>
 
+typedef float d1;
 using namespace std;
 
 /// Estruturas iniciais para armazenar vertices
@@ -29,10 +30,10 @@ const float TRIANGLE_RADIUS = 0.3;
 const float FPS = 60;
 const float BHF = 2; // Board Half Width
 const float STATIC_PRISMAS[][3] = {
-        {0.5,   -0.5, -10},
-        {-0.25, 0.5,  -20},
-        {1.25,  1.25, -20},
-        {-1.25, -1,   -45},
+        {0.5,   -0.5, 0},
+        {-0.25, 0.5,  0},
+        {1.25,  1.25, 0},
+        {-1.25, -1,   0},
 };
 
 float velocity = 0.5;
@@ -41,7 +42,6 @@ float direction[2] = {0.5, 0.5};
 float position[2] = {0, -BHF + BALL_RADIUS};
 triangle prismas[4];
 bool animate = false;
-
 
 /// Functions
 void init(void) {
@@ -114,6 +114,10 @@ float fixRange(float value, float min, float max, bool circular) {
 
 float rad(float angle) {
     return angle * M_PI / 180;
+}
+
+float calcDistance(float aX, float aY, float bX, float bY) {
+    return sqrt(pow(aX - bX, 2) + pow(aY - bY, 2));
 }
 
 void drawBoard() {
@@ -241,6 +245,18 @@ void drawPrism(triangle t) {
     glEnd();
 
     for (i = 0; i < 3; ++i) {
+        switch (i) {
+            case 0:
+                setColor(1, 0, 0);
+                break;
+            case 1:
+                setColor(0, 1, 0);
+                break;
+            case 2:
+                setColor(0, 0, 1);
+                break;
+        }
+
         int next = (i + 1) % 3;
         setCalcNormal({{
                                {t.v[i].x, t.v[i].y, 0.5},
@@ -261,7 +277,10 @@ void drawPrism(triangle t) {
 }
 
 void display(void) {
+
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -279,6 +298,13 @@ void display(void) {
     for (int i = 0; i < 4; ++i)
         drawPrism(prismas[i]);
 
+    glBegin(GL_TRIANGLES);
+    glVertex3f(position[0], position[1], -3);
+    glVertex3f(position[0], position[1], 3);
+    glVertex3f(position[0], position[1] + 0.1, -3.1);
+    glEnd();
+
+
     drawBoard();
 
     glPopMatrix();
@@ -286,32 +312,83 @@ void display(void) {
     glutSwapBuffers();
 }
 
-bool checkColision(int t) {
-
-}
-
 // update all states
 void updateState() {
     if (!animate) return;
     // maximum board position
     const float maxRange[] = {-BHF + BALL_RADIUS, BHF - BALL_RADIUS};
+    float movement = velocity * 0.1;
+
+    // Move the ball and handle overflow
+    position[0] = fixRange(position[0] + movement * direction[0], maxRange[0], maxRange[1]);
+    position[1] = fixRange(position[1] + movement * direction[1], maxRange[0], maxRange[1]);
 
     // TODO: handle prisma colision
     for (int j = 0; j < 4; ++j) {
+        int i;
+        int pontoDistante = 2;
         // se a distancia e maior do que o raio da bola + raio do triangulo
-        float distance = sqrt(pow(STATIC_PRISMAS[j][0] - position[0], 2) + pow(STATIC_PRISMAS[j][1] - position[1], 2));
+        float distance = calcDistance(STATIC_PRISMAS[j][0], STATIC_PRISMAS[j][1], position[0], position[1]);
         if (distance > (BALL_RADIUS + TRIANGLE_RADIUS)) continue;
-        cout << "COLISION " << j << " - " << distance << endl;
-        //        direction[0] *= -1;
-//        direction[1] *= -1;
+
+        for (i = 0; i < 3; ++i) {
+            // verifica ponto mais distance
+            if (calcDistance(position[0], position[1], prismas[j].v[i].x, prismas[j].v[i].y) >
+                calcDistance(position[0], position[1], prismas[j].v[pontoDistante].x, prismas[j].v[pontoDistante].y)) {
+                pontoDistante = i;
+            }
+        }
+        i = (pontoDistante + 1) % 3;
+        int fi = (i + 1) % 3;
+        // Obtem equação Ax + B
+        // coeficiente angular.
+        float a = (prismas[j].v[fi].y - prismas[j].v[i].y) /
+                  (prismas[j].v[fi].x - prismas[j].v[i].x);
+        // coeficiente linear
+        float b = (-prismas[j].v[i].x) * a + prismas[j].v[i].y;
+
+        // distancia entre centro da esfera e reta
+        float d = fabs(a * position[0] - position[1] + b) /
+                  sqrt(pow(a, 2) + 1);
+//        cout << "Distancia de " << i + 1 << ": " << d - BALL_RADIUS << endl;
+//        cout << "Ponto distante:" << pontoDistante << endl;
+
+        // colision happened
+        if (d - BALL_RADIUS <= 0) {
+            // rollback animation (or else, it will get stuck)
+            position[0] = fixRange(position[0] - movement * direction[0], maxRange[0], maxRange[1]);
+            position[1] = fixRange(position[1] - movement * direction[1], maxRange[0], maxRange[1]);
+
+            // TODO: handle infinite directionAngle
+            float directionAngle = ((position[1] + direction[1])- position[1]) /
+                                   ((position[0]  + direction[0])- position[0]);
+            float angle = atan(fabs(
+                    (a - directionAngle) /
+                    (1 + a * directionAngle)
+            )) * (180.0 / M_PI);
+            cout << "Colision angle: " << angle  << endl;
+            cout << "dir angle: " << directionAngle << endl;
+
+
+            direction[0] *= -1;
+            direction[1] *= -1;
+
+            // rotate the direction
+            // TODO fix rotation
+            float r = (-angle) * M_PI / 180;
+
+            float x = direction[0] * cos(r) - direction[1] * sin(r);
+            direction[1] = direction[0] * sin(r) + direction[1] * cos(r);
+            direction[0] = x;
+
+
+        }
     }
 
-    // overflow
-    position[0] = fixRange(position[0] + velocity * 0.1 * direction[0], maxRange[0], maxRange[1]);
-    position[1] = fixRange(position[1] + velocity * 0.1 * direction[1], maxRange[0], maxRange[1]);
-
     // borders colision
-    for (int i = 0; i < 2; ++i) {
+    for (
+            int i = 0;
+            i < 2; ++i) {
         if (position[i] == maxRange[0] || position[i] == maxRange[1])
             direction[i] *= -1;
     }
@@ -348,19 +425,19 @@ void keyboard(unsigned char key, int x, int y) {
 //    if (!animate) {
     switch (tolower(key)) {
         case 'w':
-            velocity += 0.05;
+            velocity += 0.025;
             break;
         case 's':
-            velocity -= 0.05;
+            velocity -= 0.025;
             break;
         case 'a':
-            initialDirection += 2;
+            initialDirection += 5;
             break;
         case 'd':
-            initialDirection -= 2;
+            initialDirection -= 5;
             break;
     }
-    velocity = fixRange(velocity, 0, 1);
+    velocity = fixRange(velocity, -1, 1);
     initialDirection = fixRange(initialDirection, -180, 180, true);
     direction[0] = cos((initialDirection + 90) * M_PI / 180);
     direction[1] = sin((initialDirection + 90) * M_PI / 180);
