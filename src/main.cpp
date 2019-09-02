@@ -29,13 +29,10 @@ const float TRIANGLE_RADIUS = 0.3;
 const float FPS = 60;
 const float BHF = 2; // Board Half Width
 const float STATIC_PRISMAS[][3] = {
-        {0.5, -0.5, -10},
-        {0.5, -0.5, -10},
-        {0.5, -0.5, -10},
-        {0.5, -0.5, -10},
-//        {-0.25, 0.5,  -20},
-//        {1.25,  1.25, -20},
-//        {-1.25, -1,   -45},
+        {0.5,   -0.5, -10},
+        {-0.25, 0.5,  -20},
+        {1.25,  1.25, -20},
+        {-1.25, -1,   -45},
 };
 
 float velocity = 0.5;
@@ -211,6 +208,7 @@ triangle makeTriangle(float x = 0, float y = 0, float rotation = 0) {
     for (i = 0; i < 3; ++i) {
         t.v[i].x = TRIANGLE_RADIUS * sin(rad(90 + ((2 - i) * 120)));
         t.v[i].y = TRIANGLE_RADIUS * cos(rad(90 + ((2 - i) * 120)));
+        cout << t.v[i].x << endl;
     }
 
     // rotate the triangle
@@ -281,7 +279,6 @@ void display(void) {
     for (int i = 0; i < 4; ++i)
         drawPrism(prismas[i]);
 
-
     drawBoard();
 
     glPopMatrix();
@@ -302,10 +299,11 @@ void updateState() {
     // TODO: handle prisma colision
     for (int j = 0; j < 4; ++j) {
         // se a distancia e maior do que o raio da bola + raio do triangulo
-        float distance = sqrt(pow(STATIC_PRISMAS[j][0] - position[0], 2) + pow(STATIC_PRISMAS[j][0] - position[0], 2));
+        float distance = sqrt(pow(STATIC_PRISMAS[j][0] - position[0], 2) + pow(STATIC_PRISMAS[j][1] - position[1], 2));
         if (distance > (BALL_RADIUS + TRIANGLE_RADIUS)) continue;
-
-
+        cout << "COLISION " << j << " - " << distance << endl;
+        //        direction[0] *= -1;
+//        direction[1] *= -1;
     }
 
     // overflow
@@ -347,26 +345,26 @@ void reshape(int w, int h) {
 
 void keyboard(unsigned char key, int x, int y) {
 
-    if (!animate) {
-        switch (tolower(key)) {
-            case 'w':
-                velocity += 0.05;
-                break;
-            case 's':
-                velocity -= 0.05;
-                break;
-            case 'a':
-                initialDirection += 2;
-                break;
-            case 'd':
-                initialDirection -= 2;
-                break;
-        }
-        velocity = fixRange(velocity, 0, 1);
-        initialDirection = fixRange(initialDirection, -180, 180, true);
-        direction[0] = cos((initialDirection + 90) * M_PI / 180);
-        direction[1] = sin((initialDirection + 90) * M_PI / 180);
+//    if (!animate) {
+    switch (tolower(key)) {
+        case 'w':
+            velocity += 0.05;
+            break;
+        case 's':
+            velocity -= 0.05;
+            break;
+        case 'a':
+            initialDirection += 2;
+            break;
+        case 'd':
+            initialDirection -= 2;
+            break;
     }
+    velocity = fixRange(velocity, 0, 1);
+    initialDirection = fixRange(initialDirection, -180, 180, true);
+    direction[0] = cos((initialDirection + 90) * M_PI / 180);
+    direction[1] = sin((initialDirection + 90) * M_PI / 180);
+//    }
 
     switch (tolower(key)) {
         case ' ':
