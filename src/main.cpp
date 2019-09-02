@@ -6,6 +6,9 @@
 
 #include "lib/extras.h"
 #include "etc.cpp" //TODO: reorganize modules
+#include <iostream>
+
+using namespace std;
 
 /// Estruturas iniciais para armazenar vertices
 //  Você poderá utilizá-las adicionando novos métodos (de acesso por exemplo) ou usar suas próprias estruturas.
@@ -22,6 +25,7 @@ int last_x, last_y;
 int width, height;
 
 const float BALL_RADIUS = 0.25;
+const float TRIANGLE_RADIUS = 0.3;
 const float FPS = 60;
 const float BHF = 2; // Board Half Width
 const float STATIC_PRISMAS[][3] = {
@@ -106,6 +110,10 @@ float fixRange(float value, float min, float max, bool circular) {
     else if (value < min)
         return circular ? max : min;
     return value;
+}
+
+float rad(float angle) {
+    return angle * M_PI / 180;
 }
 
 void drawBoard() {
@@ -193,11 +201,14 @@ void drawArrow() {
 
 triangle makeTriangle(float x = 0, float y = 0, float rotation = 0) {
     int i;
-    triangle t = {{
-                          {-0.25, 0},
-                          {0.25, 0},
-                          {0, 0.5},
-                  }};
+
+    triangle t;
+
+    //generate the base triangle
+    for (i = 0; i < 3; ++i) {
+        t.v[i].x = TRIANGLE_RADIUS * sin(rad(90 + ((2 - i) * 120)));
+        t.v[i].y = TRIANGLE_RADIUS * cos(rad(90 + ((2 - i) * 120)));
+    }
 
     // rotate the triangle
     float r = -rotation * M_PI / 180;
@@ -267,11 +278,16 @@ void display(void) {
     for (int i = 0; i < 4; ++i)
         drawPrism(prismas[i]);
 
+
     drawBoard();
 
     glPopMatrix();
 
     glutSwapBuffers();
+}
+
+bool checkColision(int t) {
+
 }
 
 // update all states
@@ -282,7 +298,9 @@ void updateState() {
 
     // TODO: handle prisma colision
     for (int j = 0; j < 4; ++j) {
-
+        // se a distancia e maior do que o raio da bola + raio do triangulo
+        if (abs(STATIC_PRISMAS[j][0] - position[0]) > BALL_RADIUS + 0.5) continue;
+        cout << "Colisão em " << j << ": " << STATIC_PRISMAS[j][0] - position[0] << endl;
     }
 
     // overflow
