@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
+#include <float.h>
 
 #include "lib/extras.h"
 #include "etc.cpp" //TODO: reorganize modules
@@ -319,11 +320,11 @@ void updateState() {
             position[0] = fixRange(position[0] - movement * direction[0], maxRange[0], maxRange[1]);
             position[1] = fixRange(position[1] - movement * direction[1], maxRange[0], maxRange[1]);
 
-            // TODO: handle infinite directionAngle
+            // handle infinite directionAngle
             float directionAngle = ((position[1] + direction[1]) - position[1]) /
                                    ((position[0] + direction[0]) - position[0]);
             if (fabs(directionAngle) == INFINITY) {
-                directionAngle = 0.001 * (directionAngle >= 0 ? -1 : 1);
+                directionAngle = directionAngle >= 0 ? FLT_MIN : FLT_MAX;
             }
 
             // get the colision angle
