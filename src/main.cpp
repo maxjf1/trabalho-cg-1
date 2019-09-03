@@ -20,7 +20,7 @@ float zdist = 4.0;
 float rotationX = 0, rotationY = 0;
 int last_x, last_y;
 int width, height;
-
+int angulo = 0;
 const float BALL_RADIUS = 0.25;
 const float TRIANGLE_RADIUS = 0.3;
 const float FPS = 60;
@@ -252,6 +252,7 @@ void display(void) {
 
     glRotatef(rotationY, 0, 1, 1);
     glRotatef(rotationX, 1, 0, 1);
+    glRotatef(angulo, 1, 0, 0);
     glPushMatrix();
 
     if (!animate)
@@ -410,6 +411,12 @@ void keyboard(unsigned char key, int x, int y) {
     }
 
     switch (tolower(key)) {
+        case 'p':
+            if (angulo == 0)
+                angulo = -30;
+            else
+                angulo = 0;
+            break;
         case ' ':
             animate = !animate;
             break;
@@ -425,31 +432,6 @@ void keyboard(unsigned char key, int x, int y) {
         case 27:
             exit(0);
             break;
-    }
-}
-
-// Motion callback
-void motion(int x, int y) {
-    rotationX += (float) (y - last_y);
-    rotationY += (float) (x - last_x);
-
-    last_x = x;
-    last_y = y;
-}
-
-// Mouse callback
-void mouse(int button, int state, int x, int y) {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-        last_x = x;
-        last_y = y;
-    }
-    if (button == 3) // Scroll up
-    {
-        zdist += 1.0f;
-    }
-    if (button == 4) // Scroll Down
-    {
-        zdist -= 1.0f;
     }
 }
 
@@ -473,7 +455,7 @@ void generatePrisms() {
             // Distance between prisms
             for (int j = 0; j < i; ++j) {
                 float distance = calcDistance(prismaPositions[j][0], prismaPositions[j][1], x, y);
-                if (distance <= TRIANGLE_RADIUS * 2.1) {
+                if (distance <= TRIANGLE_RADIUS * 4.1) {
                     found = false;
                     break;
                 }
