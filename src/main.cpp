@@ -8,12 +8,7 @@
 #include "etc.cpp" //TODO: reorganize modules
 #include <iostream>
 
-typedef float d1;
 using namespace std;
-
-/// Estruturas iniciais para armazenar vertices
-//  Você poderá utilizá-las adicionando novos métodos (de acesso por exemplo) ou usar suas próprias estruturas.
-
 
 // Definitions
 float fixRange(float value, float min, float max, bool circular = false);
@@ -29,12 +24,9 @@ const float BALL_RADIUS = 0.25;
 const float TRIANGLE_RADIUS = 0.3;
 const float FPS = 60;
 const float BHF = 2; // Board Half Width
-const float STATIC_PRISMAS[][3] = {
-        {0.5,   -0.5, 0},
-        {-0.25, 0.5,  0},
-        {1.25,  1.25, 0},
-        {-1.25, -1,   0},
-};
+
+// prismas iniciais
+float prismaPositions[4][3];
 
 float velocity = 0.5;
 float initialDirection = 0;
@@ -47,17 +39,6 @@ bool animate = false;
 void init(void) {
     initLight(width, height); // Função extra para tratar iluminação.
 }
-
-/* Exemplo de cálculo de vetor normal que são definidos a partir dos vértices do triângulo;
-  v_2
-  ^
-  |\
-  | \
-  |  \       'vn' é o vetor normal resultante
-  |   \
-  +----> v_1
-  v_0
-*/
 
 // Calculate normal
 vertex calcNormal(triangle t) {
@@ -123,7 +104,6 @@ float calcDistance(float aX, float aY, float bX, float bY) {
 void drawBoard() {
     glPushMatrix();
 
-
     setColorBase();
 
     // base
@@ -184,12 +164,10 @@ void drawSphere() {
 
 }
 
+
 void drawArrow() {
-
     const float height = velocity + 0.01;
-
     glPushMatrix();
-
 
     glPushMatrix();
     setColor(0, 0, 1);
@@ -205,14 +183,12 @@ void drawArrow() {
 
 triangle makeTriangle(float x = 0, float y = 0, float rotation = 0) {
     int i;
-
     triangle t;
 
     //generate the base triangle
     for (i = 0; i < 3; ++i) {
         t.v[i].x = TRIANGLE_RADIUS * sin(rad(90 + ((2 - i) * 120)));
         t.v[i].y = TRIANGLE_RADIUS * cos(rad(90 + ((2 - i) * 120)));
-        cout << t.v[i].x << endl;
     }
 
     // rotate the triangle
@@ -245,17 +221,6 @@ void drawPrism(triangle t) {
     glEnd();
 
     for (i = 0; i < 3; ++i) {
-        switch (i) {
-            case 0:
-                setColor(1, 0, 0);
-                break;
-            case 1:
-                setColor(0, 1, 0);
-                break;
-            case 2:
-                setColor(0, 0, 1);
-                break;
-        }
 
         int next = (i + 1) % 3;
         setCalcNormal({{
@@ -277,10 +242,7 @@ void drawPrism(triangle t) {
 }
 
 void display(void) {
-
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -298,13 +260,6 @@ void display(void) {
     for (int i = 0; i < 4; ++i)
         drawPrism(prismas[i]);
 
-    glBegin(GL_TRIANGLES);
-    glVertex3f(position[0], position[1], -3);
-    glVertex3f(position[0], position[1], 3);
-    glVertex3f(position[0], position[1] + 0.1, -3.1);
-    glEnd();
-
-
     drawBoard();
 
     glPopMatrix();
@@ -312,9 +267,15 @@ void display(void) {
     glutSwapBuffers();
 }
 
+float vectorAngle(float ax, float ay) {
+    return acos(ax * 1 + ay * 0) * (180.0 / M_PI);
+
+}
+
 // update all states
 void updateState() {
     if (!animate) return;
+
     // maximum board position
     const float maxRange[] = {-BHF + BALL_RADIUS, BHF - BALL_RADIUS};
     float movement = velocity * 0.1;
@@ -328,7 +289,7 @@ void updateState() {
         int i;
         int pontoDistante = 2;
         // se a distancia e maior do que o raio da bola + raio do triangulo
-        float distance = calcDistance(STATIC_PRISMAS[j][0], STATIC_PRISMAS[j][1], position[0], position[1]);
+        float distance = calcDistance(prismaPositions[j][0], prismaPositions[j][1], position[0], position[1]);
         if (distance > (BALL_RADIUS + TRIANGLE_RADIUS)) continue;
 
         for (i = 0; i < 3; ++i) {
@@ -350,8 +311,7 @@ void updateState() {
         // distancia entre centro da esfera e reta
         float d = fabs(a * position[0] - position[1] + b) /
                   sqrt(pow(a, 2) + 1);
-//        cout << "Distancia de " << i + 1 << ": " << d - BALL_RADIUS << endl;
-//        cout << "Ponto distante:" << pontoDistante << endl;
+
 
         // colision happened
         if (d - BALL_RADIUS <= 0) {
@@ -360,28 +320,33 @@ void updateState() {
             position[1] = fixRange(position[1] - movement * direction[1], maxRange[0], maxRange[1]);
 
             // TODO: handle infinite directionAngle
-            float directionAngle = ((position[1] + direction[1])- position[1]) /
-                                   ((position[0]  + direction[0])- position[0]);
-            float angle = atan(fabs(
-                    (a - directionAngle) /
-                    (1 + a * directionAngle)
-            )) * (180.0 / M_PI);
-            cout << "Colision angle: " << angle  << endl;
-            cout << "dir angle: " << directionAngle << endl;
+            float directionAngle = ((position[1] + direction[1]) - position[1]) /
+                                   ((position[0] + direction[0]) - position[0]);
+            if (fabs(directionAngle) == INFINITY) {
+                directionAngle = 0.001 * (directionAngle >= 0 ? -1 : 1);
+            }
 
+            // get the colision angle
+            float angle = atan((
+                                       (a - directionAngle) /
+                                       (1 + a * directionAngle)
+                               )) * (180.0 / M_PI);
 
-            direction[0] *= -1;
-            direction[1] *= -1;
 
             // rotate the direction
-            // TODO fix rotation
-            float r = (-angle) * M_PI / 180;
+            float r = fabs(angle * 2) * (angle / fabs(angle));
+            r = r * M_PI / 180;
 
+            // rotação
             float x = direction[0] * cos(r) - direction[1] * sin(r);
             direction[1] = direction[0] * sin(r) + direction[1] * cos(r);
             direction[0] = x;
 
+            // Re-run the movement of the ball
+            position[0] = fixRange(position[0] + movement * direction[0], maxRange[0], maxRange[1]);
+            position[1] = fixRange(position[1] + movement * direction[1], maxRange[0], maxRange[1]);
 
+            break;
         }
     }
 
@@ -422,30 +387,39 @@ void reshape(int w, int h) {
 
 void keyboard(unsigned char key, int x, int y) {
 
-//    if (!animate) {
-    switch (tolower(key)) {
-        case 'w':
-            velocity += 0.025;
-            break;
-        case 's':
-            velocity -= 0.025;
-            break;
-        case 'a':
-            initialDirection += 5;
-            break;
-        case 'd':
-            initialDirection -= 5;
-            break;
+    if (!animate) {
+        switch (tolower(key)) {
+            case 'w':
+                velocity += 0.025;
+                break;
+            case 's':
+                velocity -= 0.025;
+                break;
+            case 'a':
+                initialDirection += 5;
+                break;
+            case 'd':
+                initialDirection -= 5;
+                break;
+        }
+        velocity = fixRange(velocity, -1, 1);
+        initialDirection = fixRange(initialDirection, -180, 180, true);
+        direction[0] = cos((initialDirection + 90) * M_PI / 180);
+        direction[1] = sin((initialDirection + 90) * M_PI / 180);
     }
-    velocity = fixRange(velocity, -1, 1);
-    initialDirection = fixRange(initialDirection, -180, 180, true);
-    direction[0] = cos((initialDirection + 90) * M_PI / 180);
-    direction[1] = sin((initialDirection + 90) * M_PI / 180);
-//    }
 
     switch (tolower(key)) {
         case ' ':
             animate = !animate;
+            break;
+        case 'r':
+            prismaPositions[0][2] += 1;
+            prismas[0] = makeTriangle(prismaPositions[0][0], prismaPositions[0][1], prismaPositions[0][2]);
+            break;
+
+        case 't':
+            prismaPositions[0][2] -= 1;
+            prismas[0] = makeTriangle(prismaPositions[0][0], prismaPositions[0][1], prismaPositions[0][2]);
             break;
         case 27:
             exit(0);
@@ -478,12 +452,43 @@ void mouse(int button, int state, int x, int y) {
     }
 }
 
+void generatePrisms() {
+    srand(time(NULL));
+    for (int i = 0; i < 4; ++i) {
+        bool found = false;
+        float x, y, r;
+        while (!found) {
+            found = true;
+            // generate points inside the box (using the triangle radius)
+            x = (float) rand() / (float) RAND_MAX * (4 - 2 * TRIANGLE_RADIUS) - 2 + TRIANGLE_RADIUS;
+            y = (float) rand() / (float) RAND_MAX * (4 - 2 * TRIANGLE_RADIUS) - 2 + TRIANGLE_RADIUS;
+            r = rand() % 360;
+            // distance from the ball
+            if (calcDistance(position[0], position[1], x, y) <= (TRIANGLE_RADIUS + BALL_RADIUS) * 1.1) {
+                found = false;
+                continue;
+            }
+
+            // Distance between prisms
+            for (int j = 0; j < i; ++j) {
+                float distance = calcDistance(prismaPositions[j][0], prismaPositions[j][1], x, y);
+                if (distance <= TRIANGLE_RADIUS * 2.1) {
+                    found = false;
+                    break;
+                }
+            }
+
+            prismaPositions[i][0] = x;
+            prismaPositions[i][1] = y;
+            prismaPositions[i][2] = r;
+            prismas[i] = makeTriangle(prismaPositions[i][0], prismaPositions[i][1], prismaPositions[i][2]);
+        }
+    }
+}
+
 /// Main
 int main(int argc, char **argv) {
-    // initialize prismas
-    for (int i = 0; i < 4; ++i) {
-        prismas[i] = makeTriangle(STATIC_PRISMAS[i][0], STATIC_PRISMAS[i][1], STATIC_PRISMAS[i][2]);
-    }
+    generatePrisms();
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -493,8 +498,8 @@ int main(int argc, char **argv) {
     init();
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
-    glutMouseFunc(mouse);
-    glutMotionFunc(motion);
+//    glutMouseFunc(mouse);
+//    glutMotionFunc(motion);
     glutKeyboardFunc(keyboard);
     glutIdleFunc(idle);
     glutMainLoop();
